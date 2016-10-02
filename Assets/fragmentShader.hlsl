@@ -35,7 +35,7 @@ void main(
 	// (where color is represented by 4 floats representing "RGBA" == "Red/Green/Blue/Alpha").
 	// Try experimenting with changing the values of the first three numbers
 	// to something in the range [0,1] and observe the results.
-	o_color = float4( 1.0, 1.0, 1.0, 1.0 );
+	o_color = float4( 0.5 + 0.5 * sin( 2 * g_elapsedSecondCount_total ), 0.5 + 0.5 * cos( 2 * g_elapsedSecondCount_total ), 0.5 + 0.5 * sin( 2 * g_elapsedSecondCount_total + 4 ), 1.0 );
 
 	// EAE6320_TODO: Change the color based on time!
 	// The value g_elapsedSecondCount_total should change every second, and so by doing something like

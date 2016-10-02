@@ -38,10 +38,10 @@ void main(
 		// When we move to 3D graphics the screen position that the vertex shader outputs
 		// will be different than the position that is input to it from C code,
 		// but for now the "out" position is set directly from the "in" position:
-		o_position = float4( i_position.x, i_position.y, 0.0, 1.0 );
+		o_position = float4( i_position.x - 0.5 * sin(g_elapsedSecondCount_total) - 0.5, i_position.y - 0.5 * cos(g_elapsedSecondCount_total) - 0.5, 0.0, 1.0 );
 		// Or, equivalently:
-		o_position = float4( i_position.xy, 0.0, 1.0 );
-		o_position = float4( i_position, 0.0, 1.0 );
+		//o_position = float4( i_position.xy, 0.0, 1.0 );
+		//o_position = float4( i_position, 0.0, 1.0 );
 
 		// EAE6320_TODO: Change the color based on time!
 		// The value g_elapsedSecondCount_total should change every second, and so by doing something like

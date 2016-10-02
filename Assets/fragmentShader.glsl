@@ -36,7 +36,7 @@ void main()
 	// If you are curious you should experiment with changing the values of the first three numbers
 	// to something in the range [0,1] and observing the results
 	// (although when you submit your Assignment 01 the color output must be white).
-	o_color = vec4( 1.0, 1.0, 1.0, 1.0 );
+	o_color = vec4( 0.5 + 0.5 * sin( 2 * g_elapsedSecondCount_total ), 0.5 + 0.5 * cos( 2 * g_elapsedSecondCount_total ), 0.5 + 0.5 * sin( 2 * g_elapsedSecondCount_total + 4 ), 1.0 );
 
 	// EAE6320_TODO: Change the color based on time!
 	// The value g_elapsedSecondCount_total should change every second, and so by doing something like

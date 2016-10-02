@@ -68,7 +68,7 @@ namespace eae6320
 		// as one of your classmate's.
 		// You don't need to worry about this for our class,
 		// but if you ever ship a real project using this code as a base you should probably set this to something unique :)
-		virtual const char* GetMainWindowClassName() const { return "[YOUR NAME]'s EAE6320 Main Window Class"; }
+		virtual const char* GetMainWindowClassName() const { return "Saurabh's EAE6320 Main Window Class"; }
 		// If you want you can change the icons used for your game here. The following three are provided:
 		//	* IDI_EAEGAMEPAD
 		//	* IDI_EAEALIEN
