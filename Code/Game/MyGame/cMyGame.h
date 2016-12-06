@@ -36,6 +36,11 @@ namespace eae6320
 
 	private:
 
+		// Run
+		//--------------
+
+		virtual void Update();
+
 		// Configuration
 		//--------------
 

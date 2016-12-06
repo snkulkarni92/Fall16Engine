@@ -208,5 +208,6 @@ eae6320::Application::cbApplication::~cbApplication()
 void eae6320::Application::cbApplication::OnNewFrame()
 {
 	Time::OnNewFrame();
+	Update();
 	Graphics::RenderFrame();
 }

@@ -123,10 +123,13 @@ namespace eae6320
 			// Implementation
 			//===============
 
+
 		private:
 
 			// Run
 			//----
+
+			virtual void Update() = 0;
 
 			void OnNewFrame();
 			bool WaitForApplicationToFinish( int& o_exitCode );
