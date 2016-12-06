@@ -9,6 +9,8 @@
 #include <D3DX11async.h>
 #include <D3DX11core.h>
 #include <DXGI.h>
+#include <vector>
+#include "../Includes.h"
 #include "../../Asserts/Asserts.h"
 #include "../../Logging/Logging.h"
 #include "../../Time/Time.h"
@@ -26,20 +28,15 @@ namespace
 	ID3D11DeviceContext* s_direct3dImmediateContext = NULL;
 	ID3D11RenderTargetView* s_renderTargetView = NULL;
 
-	// This struct determines the layout of the geometric data that the CPU will send to the GPU
-	struct sVertex
-	{
-		// POSITION
-		// 2 floats == 8 bytes
-		// Offset = 0
-		float x, y;
-	};
+	//The list of renderables to be drawn
+	std::vector <eae6320::Graphics::Mesh *> s_listOfRenderables;
+	
 	// D3D has an "input layout" object that associates the layout of the struct above
 	// with the input from a vertex shader
 	ID3D11InputLayout* s_vertexLayout = NULL;
 
 	// The vertex buffer holds the data for each vertex
-	ID3D11Buffer* s_vertexBuffer = NULL;
+	//ID3D11Buffer* s_vertexBuffer = NULL;
 
 	// The vertex shader is a program that operates on vertices.
 	// Its input comes from a C/C++ "draw call" and is:
@@ -79,7 +76,7 @@ namespace
 {
 	bool CreateConstantBuffer();
 	bool CreateDevice( const unsigned int i_resolutionWidth, const unsigned int i_resolutionHeight );
-	bool CreateVertexBuffer( ID3D10Blob& i_compiledShader );
+	bool CreateVertexBufferLayout( ID3D10Blob& i_compiledShader );
 	bool CreateView( const unsigned int i_resolutionWidth, const unsigned int i_resolutionHeight );
 	bool LoadFragmentShader();
 	bool LoadVertexShader( ID3D10Blob*& o_compiledShader );
@@ -87,6 +84,14 @@ namespace
 
 // Interface
 //==========
+
+// Submit to Draw
+//-------
+
+void eae6320::Graphics::SubmitObject(eae6320::Graphics::Mesh * object)
+{
+	s_listOfRenderables.push_back(object);
+}
 
 // Render
 //-------
@@ -154,6 +159,7 @@ void eae6320::Graphics::RenderFrame()
 			s_direct3dImmediateContext->VSSetShader( s_vertexShader, noInterfaces, interfaceCount );
 			s_direct3dImmediateContext->PSSetShader( s_fragmentShader, noInterfaces, interfaceCount );
 		}
+/*
 		// Bind a specific vertex buffer to the device as a data source
 		{
 			const unsigned int startingSlot = 0;
@@ -164,6 +170,10 @@ void eae6320::Graphics::RenderFrame()
 			const unsigned int bufferOffset = 0;
 			s_direct3dImmediateContext->IASetVertexBuffers( startingSlot, vertexBufferCount, &s_vertexBuffer, &bufferStride, &bufferOffset );
 		}
+*/
+
+		
+
 		// Specify what kind of data the vertex buffer holds
 		{
 			// Set the layout (which defines how to interpret a single vertex)
@@ -173,7 +183,7 @@ void eae6320::Graphics::RenderFrame()
 			// (meaning that every primitive is a triangle and will be defined by three vertices)
 			s_direct3dImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 		}
-		// Render triangles from the currently-bound vertex buffer
+/*		// Render triangles from the currently-bound vertex buffer
 		{
 			// As of this comment we are only drawing a single triangle
 			// (you will have to update this code in future assignments!)
@@ -184,8 +194,13 @@ void eae6320::Graphics::RenderFrame()
 			const unsigned int indexOfFirstVertexToRender = 0;
 			s_direct3dImmediateContext->Draw( vertexCountToRender, indexOfFirstVertexToRender );
 		}
+*/
+		for (std::vector<Mesh *>::iterator i = s_listOfRenderables.begin(); i != s_listOfRenderables.end(); ++i)
+		{
+			(*i)->Draw();
+		}
+		s_listOfRenderables.clear();
 	}
-
 	// Everything has been drawn to the "back buffer", which is just an image in memory.
 	// In order to display it the contents of the back buffer must be "presented"
 	// (to the front buffer)
@@ -213,6 +228,7 @@ bool eae6320::Graphics::Initialize( const sInitializationParameters& i_initializ
 		wereThereErrors = true;
 		goto OnExit;
 	}
+
 	// Initialize the viewport of the device
 	if ( !CreateView( i_initializationParameters.resolutionWidth, i_initializationParameters.resolutionHeight ) )
 	{
@@ -226,7 +242,7 @@ bool eae6320::Graphics::Initialize( const sInitializationParameters& i_initializ
 		wereThereErrors = true;
 		goto OnExit;
 	}
-	if ( !CreateVertexBuffer( *compiledVertexShader ) )
+	if ( !CreateVertexBufferLayout( *compiledVertexShader ) )
 	{
 		wereThereErrors = true;
 		goto OnExit;
@@ -241,6 +257,10 @@ bool eae6320::Graphics::Initialize( const sInitializationParameters& i_initializ
 		wereThereErrors = true;
 		goto OnExit;
 	}
+	GraphicsContext context;
+	context.direct3dDevice = s_direct3dDevice;
+	context.direct3dImmediateContext = s_direct3dImmediateContext;
+	CreateNewGraphicsContext(context);
 
 OnExit:
 
@@ -268,11 +288,11 @@ bool eae6320::Graphics::CleanUp()
 			s_vertexLayout->Release();
 			s_vertexLayout = NULL;
 		}
-		if ( s_vertexBuffer )
+		/*if ( s_vertexBuffer )
 		{
 			s_vertexBuffer->Release();
 			s_vertexBuffer = NULL;
-		}
+		}*/
 
 		if ( s_vertexShader )
 		{
@@ -414,7 +434,7 @@ namespace
 		}
 	}
 
-	bool CreateVertexBuffer( ID3D10Blob& i_compiledShader )
+	bool CreateVertexBufferLayout( ID3D10Blob& i_compiledShader )
 	{
 		// Create the vertex layout
 		{
@@ -439,7 +459,7 @@ namespace
 					positionElement.SemanticIndex = 0;	// (Semantics without modifying indices at the end can always use zero)
 					positionElement.Format = DXGI_FORMAT_R32G32_FLOAT;
 					positionElement.InputSlot = 0;
-					positionElement.AlignedByteOffset = offsetof( sVertex, x );
+					positionElement.AlignedByteOffset = offsetof(eae6320::Graphics::sVertex, x);
 					positionElement.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 					positionElement.InstanceDataStepRate = 0;	// (Must be zero for per-vertex data)
 				}
@@ -459,53 +479,53 @@ namespace
 		// You will have to update this in a future assignment
 		// (one of the most common mistakes in the class is to leave hard-coded values here).
 
-		const unsigned int triangleCount = 2;
-		const unsigned int vertexCountPerTriangle = 3;
-		const unsigned int vertexCount = triangleCount * vertexCountPerTriangle;
-		const unsigned int bufferSize = vertexCount * sizeof( sVertex );
-		sVertex vertexData[vertexCount];
-		{
-			vertexData[0].x = 0.0f;
-			vertexData[0].y = 0.0f;
+		//const unsigned int triangleCount = 2;
+		//const unsigned int vertexCountPerTriangle = 3;
+		//const unsigned int vertexCount = triangleCount * vertexCountPerTriangle;
+		//const unsigned int bufferSize = vertexCount * sizeof(eae6320::Graphics::sVertex );
+		//eae6320::Graphics::sVertex vertexData[vertexCount];
+		//{
+		//	vertexData[0].x = 0.0f;
+		//	vertexData[0].y = 0.0f;
 
-			vertexData[1].x = 1.0f;
-			vertexData[1].y = 1.0f;
+		//	vertexData[1].x = 1.0f;
+		//	vertexData[1].y = 1.0f;
 
-			vertexData[2].x = 1.0f;
-			vertexData[2].y = 0.0f;
+		//	vertexData[2].x = 1.0f;
+		//	vertexData[2].y = 0.0f;
 
-			vertexData[3].x = 0.0f;
-			vertexData[3].y = 0.0f;
+		//	vertexData[3].x = 0.0f;
+		//	vertexData[3].y = 0.0f;
 
-			vertexData[4].x = 0.0f;
-			vertexData[4].y = 1.0f;
+		//	vertexData[4].x = 0.0f;
+		//	vertexData[4].y = 1.0f;
 
-			vertexData[5].x = 1.0f;
-			vertexData[5].y = 1.0f;
-		}
+		//	vertexData[5].x = 1.0f;
+		//	vertexData[5].y = 1.0f;
+		//}
 
-		D3D11_BUFFER_DESC bufferDescription = { 0 };
-		{
-			bufferDescription.ByteWidth = bufferSize;
-			bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;	// In our class the buffer will never change after it's been created
-			bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-			bufferDescription.CPUAccessFlags = 0;	// No CPU access is necessary
-			bufferDescription.MiscFlags = 0;
-			bufferDescription.StructureByteStride = 0;	// Not used
-		}
-		D3D11_SUBRESOURCE_DATA initialData = { 0 };
-		{
-			initialData.pSysMem = vertexData;
-			// (The other data members are ignored for non-texture buffers)
-		}
+		//D3D11_BUFFER_DESC bufferDescription = { 0 };
+		//{
+		//	bufferDescription.ByteWidth = bufferSize;
+		//	bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;	// In our class the buffer will never change after it's been created
+		//	bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		//	bufferDescription.CPUAccessFlags = 0;	// No CPU access is necessary
+		//	bufferDescription.MiscFlags = 0;
+		//	bufferDescription.StructureByteStride = 0;	// Not used
+		//}
+		//D3D11_SUBRESOURCE_DATA initialData = { 0 };
+		//{
+		//	initialData.pSysMem = vertexData;
+		//	// (The other data members are ignored for non-texture buffers)
+		//}
 
-		const HRESULT result = s_direct3dDevice->CreateBuffer( &bufferDescription, &initialData, &s_vertexBuffer );
-		if ( FAILED( result ) )
-		{
-			EAE6320_ASSERT( false );
-			eae6320::Logging::OutputError( "Direct3D failed to create the vertex buffer with HRESULT %#010x", result );
-			return false;
-		}
+		//const HRESULT result = s_direct3dDevice->CreateBuffer( &bufferDescription, &initialData, &s_vertexBuffer );
+		//if ( FAILED( result ) )
+		//{
+		//	EAE6320_ASSERT( false );
+		//	eae6320::Logging::OutputError( "Direct3D failed to create the vertex buffer with HRESULT %#010x", result );
+		//	return false;
+		//}
 
 		return true;
 	}

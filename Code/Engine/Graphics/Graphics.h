@@ -9,7 +9,7 @@
 //=============
 
 #include "Configuration.h"
-
+#include "Mesh.h"
 #if defined( EAE6320_PLATFORM_WINDOWS )
 	#include "../Windows/Includes.h"
 #endif
@@ -25,6 +25,11 @@ namespace eae6320
 		//-------
 
 		void RenderFrame();
+
+		// Submit for Drawing
+		//-------
+
+		void SubmitObject(Mesh * object);
 
 		// Initialization / Clean Up
 		//--------------------------
